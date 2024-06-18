@@ -1,6 +1,7 @@
 package com.example.skatetrack.presentation
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -28,13 +29,19 @@ import java.io.IOException
 
 class MainActivity : ComponentActivity() {
     private lateinit var dataClient: DataClient
+    private val TAG = "SkateTrackWear"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         setTheme(android.R.style.Theme_DeviceDefault)
         dataClient = Wearable.getDataClient(this)
         setContent {
-            SkateWatchApp { tricks -> writeCSV(tricks) }
+            SkateWatchApp { tricks ->
+                Log.d(TAG, "Export Data button clicked")
+                writeCSV(tricks)
+                sendDataToMobile(tricks)
+            }
         }
     }
 
@@ -45,6 +52,7 @@ class MainActivity : ComponentActivity() {
             csvBody.append("${trick.name},${trick.attemptsState},${trick.landsState}\n")
         }
         val csvData = csvHeader + csvBody.toString()
+        Log.d(TAG, "Writing CSV data: \n$csvData")
         try {
             val file = File(getExternalFilesDir(null), "skate_tricks.csv")
             val writer = FileWriter(file)
@@ -65,7 +73,11 @@ class MainActivity : ComponentActivity() {
             dataMap.putAll(this.dataMap)
         }
         val putDataRequest = putDataMapRequest.asPutDataRequest()
-        dataClient.putDataItem(putDataRequest)
+        dataClient.putDataItem(putDataRequest).addOnSuccessListener {
+            Log.d(TAG, "Data sent successfully")
+        }.addOnFailureListener {
+            Log.e(TAG, "Failed to send data", it)
+        }
     }
 }
 
@@ -75,18 +87,24 @@ fun SkateWatchApp(onExport: (List<Trick>) -> Unit) {
 
     SkateTrackTheme {
         when (appState) {
-            AppState.Start -> StartScreen(onStart = { appState = AppState.Tricks })
+            AppState.Start -> StartScreen(
+                onStart = { appState = AppState.Tricks },
+                onExport = { onExport(listOf(Trick("Ollie"), Trick("Kickflip"), Trick("Heelflip"))) }
+            )
             AppState.Tricks -> TrickScreen(
                 onExport = onExport,
                 onFinish = { appState = AppState.Finished }
             )
-            AppState.Finished -> StartScreen(onStart = { appState = AppState.Tricks })
+            AppState.Finished -> StartScreen(
+                onStart = { appState = AppState.Tricks },
+                onExport = { onExport(listOf(Trick("Ollie"), Trick("Kickflip"), Trick("Heelflip"))) }
+            )
         }
     }
 }
 
 @Composable
-fun StartScreen(onStart: () -> Unit) {
+fun StartScreen(onStart: () -> Unit, onExport: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -96,15 +114,25 @@ fun StartScreen(onStart: () -> Unit) {
     ) {
         Text(
             text = "SkateWatch",
-            style = MaterialTheme.typography.h4,
+            style = MaterialTheme.typography.h5, // Reduced the text size
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(8.dp) // Adjusted padding
         )
-        Button(onClick = onStart) {
-            Text("Start")
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(top = 16.dp)
+        ) {
+            Button(onClick = onStart, modifier = Modifier.padding(end = 8.dp)) {
+                Text("Start")
+            }
+            Button(onClick = onExport) {
+                Text("Export Data")
+            }
         }
     }
 }
+
 
 @Composable
 fun TrickScreen(onExport: (List<Trick>) -> Unit, onFinish: () -> Unit) {
@@ -179,3 +207,4 @@ fun TrickScreen(onExport: (List<Trick>) -> Unit, onFinish: () -> Unit) {
 fun DefaultPreview() {
     SkateWatchApp {}
 }
+
