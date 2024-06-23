@@ -1,13 +1,16 @@
 package com.example.skatetrack
 
+import java.sql.Time
 import java.util.Date
 
 data class Attempt(
-    val date: Date
+    val date: Date,
+    val time: Time
 )
 
 data class Land(
-    val date: Date
+    val date: Date,
+    val time: Time
 )
 
 data class Trick(
