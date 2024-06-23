@@ -12,7 +12,6 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
@@ -64,10 +63,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun sendDataToMobile(tricks: List<Trick>) {
+        val dataString = tricks.joinToString(separator = "\n") {
+            "${it.name},${it.attemptsState},${it.landsState}"
+        }
+        Log.d(TAG, "Sending data to mobile: \n$dataString")
         val dataMap = DataMap().apply {
-            putString("tricks_data", tricks.joinToString(separator = "\n") {
-                "${it.name},${it.attemptsState},${it.landsState}"
-            })
+            putString("tricks_data", dataString)
         }
         val putDataMapRequest = PutDataMapRequest.create("/tricks").apply {
             dataMap.putAll(this.dataMap)
@@ -132,7 +133,6 @@ fun StartScreen(onStart: () -> Unit, onExport: () -> Unit) {
         }
     }
 }
-
 
 @Composable
 fun TrickScreen(onExport: (List<Trick>) -> Unit, onFinish: () -> Unit) {
@@ -207,4 +207,3 @@ fun TrickScreen(onExport: (List<Trick>) -> Unit, onFinish: () -> Unit) {
 fun DefaultPreview() {
     SkateWatchApp {}
 }
-

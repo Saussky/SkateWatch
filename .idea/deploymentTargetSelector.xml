@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="mobile">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-06-18T23:48:06.374533Z">
+        <DropdownSelection timestamp="2024-06-23T04:37:57.695746Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/pgardnerbrunton/.android/avd/Pixel_3a_API_34.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/pgardnerbrunton/.android/avd/Pixel_6a_API_35.avd" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -15,10 +15,10 @@
       </SelectionState>
       <SelectionState runConfigName="wear">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-06-18T23:47:55.504127Z">
+        <DropdownSelection timestamp="2024-06-23T04:55:24.862873Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/pgardnerbrunton/.android/avd/Pixel_3a_API_34.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/pgardnerbrunton/.android/avd/Wear_OS_Square_API_33.avd" />
             </handle>
           </Target>
         </DropdownSelection>
