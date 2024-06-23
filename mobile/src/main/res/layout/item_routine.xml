@@ -2,24 +2,39 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="8dp">
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:gravity="center_vertical">
 
     <TextView
         android:id="@+id/stanceTextView"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Stance"/>
+        android:layout_weight="1"
+        android:text="Stance"
+        android:textSize="16sp"/>
 
     <TextView
         android:id="@+id/trickTextView"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Trick"/>
+        android:layout_weight="1"
+        android:text="Trick"
+        android:textSize="16sp"/>
 
     <TextView
         android:id="@+id/landingGoalTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Landing Goal"/>
+        android:text="Landing Goal"
+        android:textSize="16sp"
+        android:layout_marginEnd="8dp"/>
+
+    <ImageButton
+        android:id="@+id/deleteButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/ic_menu_delete"
+        android:contentDescription="Delete"
+        android:background="?attr/selectableItemBackgroundBorderless"/>
 </LinearLayout>

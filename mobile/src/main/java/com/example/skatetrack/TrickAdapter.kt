@@ -6,16 +6,22 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class TrickAdapter(private val tricks: MutableList<Trick>) :
-    RecyclerView.Adapter<TrickAdapter.TrickViewHolder>() {
+class TrickAdapter(
+    private val tricks: MutableList<Trick>,
+    private val onDelete: (Int) -> Unit,
+    private val onMoveUp: (Int) -> Unit
+) : RecyclerView.Adapter<TrickAdapter.TrickViewHolder>() {
 
     class TrickViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val stanceTextView: TextView = view.findViewById(R.id.stanceTextView)
         val trickTextView: TextView = view.findViewById(R.id.trickTextView)
         val landingGoalEditText: EditText = view.findViewById(R.id.landingGoalEditText)
+        val deleteButton: ImageButton = view.findViewById(R.id.deleteButton)
+        val moveUpButton: ImageButton = view.findViewById(R.id.moveUpButton)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrickViewHolder {
@@ -40,6 +46,14 @@ class TrickAdapter(private val tricks: MutableList<Trick>) :
                 tricks[position] = trick.copy(landingGoal = newGoal)
             }
         })
+
+        holder.deleteButton.setOnClickListener {
+            onDelete(position)
+        }
+
+        holder.moveUpButton.setOnClickListener {
+            onMoveUp(position)
+        }
     }
 
     override fun getItemCount(): Int = tricks.size

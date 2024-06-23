@@ -68,7 +68,9 @@ class RoutinesActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         routinesRecyclerView.layoutManager = LinearLayoutManager(this)
-        routinesRecyclerView.adapter = RoutineAdapter(routines)
+        routinesRecyclerView.adapter = RoutineAdapter(routines) { position ->
+            deleteRoutine(position)
+        }
     }
 
     private fun addRoutine() {
@@ -82,6 +84,11 @@ class RoutinesActivity : AppCompatActivity() {
             routinesRecyclerView.adapter?.notifyDataSetChanged()
             landingGoalInput.text.clear()
         }
+    }
+
+    private fun deleteRoutine(position: Int) {
+        routines.removeAt(position)
+        routinesRecyclerView.adapter?.notifyDataSetChanged()
     }
 
     private fun saveRoutine() {

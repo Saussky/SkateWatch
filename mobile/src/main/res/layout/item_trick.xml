@@ -30,4 +30,20 @@
         android:inputType="number"
         android:layout_marginStart="8dp"
         android:width="60dp"/>
+
+    <ImageButton
+        android:id="@+id/moveUpButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/arrow_up_float"
+        android:contentDescription="Move Up"
+        android:background="?attr/selectableItemBackgroundBorderless"/>
+
+    <ImageButton
+        android:id="@+id/deleteButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/ic_menu_delete"
+        android:contentDescription="Delete"
+        android:background="?attr/selectableItemBackgroundBorderless"/>
 </LinearLayout>

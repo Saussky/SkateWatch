@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
-import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -36,7 +35,7 @@ class EditRoutineActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         tricksRecyclerView.layoutManager = LinearLayoutManager(this)
-        tricksRecyclerView.adapter = TrickAdapter(tricks)
+        tricksRecyclerView.adapter = TrickAdapter(tricks, this::deleteTrick, this::moveTrickUp)
     }
 
     private fun loadRoutine() {
@@ -74,5 +73,18 @@ class EditRoutineActivity : AppCompatActivity() {
 
         val intent = Intent(this, RoutinesSelectionActivity::class.java)
         startActivity(intent)
+    }
+
+    private fun deleteTrick(position: Int) {
+        tricks.removeAt(position)
+        tricksRecyclerView.adapter?.notifyDataSetChanged()
+    }
+
+    private fun moveTrickUp(position: Int) {
+        if (position > 0) {
+            val trick = tricks.removeAt(position)
+            tricks.add(position - 1, trick)
+            tricksRecyclerView.adapter?.notifyDataSetChanged()
+        }
     }
 }
