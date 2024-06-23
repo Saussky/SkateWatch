@@ -5,12 +5,14 @@ import java.util.Date
 
 data class Attempt(
     val date: Date,
-    val time: Time
+    val time: Time,
+    val speed: Int
 )
 
 data class Land(
     val date: Date,
-    val time: Time
+    val time: Time,
+    val speed: Int
 )
 
 data class Trick(
