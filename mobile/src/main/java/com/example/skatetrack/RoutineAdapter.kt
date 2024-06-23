@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
-class RoutineAdapter(private val routines: List<Routine>) :
+class RoutineAdapter(private val routines: List<Trick>) :
     RecyclerView.Adapter<RoutineAdapter.RoutineViewHolder>() {
 
     class RoutineViewHolder(view: View) : RecyclerView.ViewHolder(view) {
