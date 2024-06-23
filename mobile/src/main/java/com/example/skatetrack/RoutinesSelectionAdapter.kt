@@ -1,5 +1,6 @@
 package com.example.skatetrack
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -31,8 +32,12 @@ class RoutineSelectionAdapter(
     override fun onBindViewHolder(holder: RoutineViewHolder, position: Int) {
         val routine = routines[position]
         holder.routineNameTextView.text = routine.name
+
         holder.editButton.setOnClickListener {
-            // Handle edit routine
+            val context = holder.itemView.context
+            val intent = Intent(context, EditRoutineActivity::class.java)
+            intent.putExtra("routineName", routine.name)
+            context.startActivity(intent)
         }
         holder.viewStatsButton.setOnClickListener {
             // Handle view stats
