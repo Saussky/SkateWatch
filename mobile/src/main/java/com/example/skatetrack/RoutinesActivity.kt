@@ -53,7 +53,7 @@ class RoutinesActivity : AppCompatActivity() {
     private fun setupSpinners() {
         val stances = listOf("Reg", "Switch", "Nollie", "Fakie")
         val tricks = listOf(
-            "Ollie", "Kickflip", "Heelflip", "Pop Shuvit", "Varial Flip", "Tre Flip",
+            "Ollie", "Shuv", "F Shuv", "Kickflip", "Heelflip", "Varial Flip", "Varial Heel", "Tre Flip",
             "Hardflip", "Inward Heelflip", "Laser Flip", "Impossible", "Bigspin Flip"
         )
 

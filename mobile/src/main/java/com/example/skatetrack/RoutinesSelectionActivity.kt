@@ -3,11 +3,17 @@ package com.example.skatetrack
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.wearable.Node
+import com.google.android.gms.wearable.PutDataMapRequest
+import com.google.android.gms.wearable.PutDataRequest
+import com.google.android.gms.wearable.Wearable
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
@@ -16,10 +22,13 @@ class RoutinesSelectionActivity : AppCompatActivity() {
     private lateinit var createRoutineButton: Button
     private lateinit var routinesRecyclerView: RecyclerView
     private val routines = mutableListOf<Routine>()
+    private val TAG = "SkateTrackMobile"
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_routines_selection)
+
 
         createRoutineButton = findViewById(R.id.createRoutineButton)
         routinesRecyclerView = findViewById(R.id.routinesRecyclerView)
@@ -31,6 +40,16 @@ class RoutinesSelectionActivity : AppCompatActivity() {
 
         setupRecyclerView()
         loadSavedRoutines()
+
+        val sendRoutinesButton: Button = findViewById(R.id.send_routines_button)
+        sendRoutinesButton.setOnClickListener {
+            sendRoutinesToWearable()
+        }
+
+        val sendMessageButton: Button = findViewById(R.id.send_message_button)
+        sendMessageButton.setOnClickListener {
+            sendMessageToWearable()
+        }
     }
 
     private fun setupRecyclerView() {
@@ -82,5 +101,39 @@ class RoutinesSelectionActivity : AppCompatActivity() {
         editor.apply()
 
         routinesRecyclerView.adapter?.notifyItemRemoved(position)
+    }
+
+    private fun sendRoutinesToWearable() {
+        val sharedPreferences = getSharedPreferences("routines", Context.MODE_PRIVATE)
+        val gson = Gson()
+        val json = sharedPreferences.getString("routines_list", null)
+        val type = object : TypeToken<List<Routine>>() {}.type
+        val routines: List<Routine> = gson.fromJson(json, type) ?: emptyList()
+
+        Log.d(TAG, "Sending routines: $routines")
+
+        val routinesJson = gson.toJson(routines)
+        val putDataReq: PutDataRequest = PutDataMapRequest.create("/routines").apply {
+            dataMap.putString("routines", routinesJson)
+        }.asPutDataRequest()
+
+        Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
+            Log.d(TAG, "Routines sent to wearable")
+        }.addOnFailureListener {
+            Log.e(TAG, "Failed to send routines", it)
+        }
+    }
+
+    private fun sendMessageToWearable() {
+        val putDataReq: PutDataRequest = PutDataMapRequest.create("/message").apply {
+            dataMap.putString("message", "Sent from mobile")
+        }.asPutDataRequest()
+
+        Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
+            Log.d(TAG, "Message sent to wearable")
+            Toast.makeText(this, "Message sent to wearable", Toast.LENGTH_SHORT).show()
+        }.addOnFailureListener {
+            Log.e(TAG, "Failed to send message", it)
+        }
     }
 }

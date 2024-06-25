@@ -1,4 +1,4 @@
-package com.example.skatetrack.presentation
+package com.example.common
 
 import java.sql.Time
 import java.util.Date
