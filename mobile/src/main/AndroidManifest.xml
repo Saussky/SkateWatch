@@ -58,7 +58,7 @@
             android:exported="true">
         </activity>
         <activity
-            android:name=".DataActivity"
+            android:name=".StatsActivity"
             android:exported="true">
         </activity>
 

@@ -1,7 +1,6 @@
 package com.example.skatetrack
 
 import android.util.Log
-import android.widget.Toast
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
@@ -21,18 +20,31 @@ class MobileWearableListenerService : WearableListenerService() {
                 val dataItem = event.dataItem
                 Log.d(TAG, "Data path: ${dataItem.uri.path}")
                 when (dataItem.uri.path) {
+                    "/update_routines" -> {
+                        val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
+                        val routinesJson = dataMap.getString("routines")
+                        Log.d(TAG, "Received routines JSON: $routinesJson")
+                        val type = object : TypeToken<List<Routine>>() {}.type
+                        val updatedRoutines: List<Routine> = Gson().fromJson(routinesJson, type) ?: emptyList()
+                        Log.d(TAG, "Parsed routines: $updatedRoutines")
+
+                        saveRoutinesToPreferences(updatedRoutines)
+                    }
                     "/get_routines" -> {
                         sendRoutinesToWearable()
-                    }
-                    "/message" -> {
-                        val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
-                        val message = dataMap.getString("message")
-                        Log.d(TAG, "Received message: $message")
-                        Toast.makeText(this, "Received from watch: $message", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
         }
+    }
+
+    private fun saveRoutinesToPreferences(routines: List<Routine>) {
+        val sharedPreferences = getSharedPreferences("routines", MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        val routinesJson = Gson().toJson(routines)
+        editor.putString("routines_list", routinesJson)
+        editor.apply()
+        Log.d(TAG, "Routines saved to preferences: $routines")
     }
 
     private fun sendRoutinesToWearable() {
