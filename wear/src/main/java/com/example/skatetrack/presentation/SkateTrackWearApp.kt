@@ -6,12 +6,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import android.util.Log
+
 
 @Composable
-fun SkateTrackWearApp(routines: List<Routine>, requestRoutines: () -> Unit, sendMessage: () -> Unit, logAttempt: (Int, Int, Boolean) -> Unit) {
-    var currentRoutineIndex by remember { mutableStateOf(0) }
+fun SkateTrackWearApp(routines: List<Routine>, logAttempt: (Int, Int, Boolean) -> Unit) {
+    var currentRoutineIndex by remember { mutableStateOf<Int?>(null) }
     var currentTrickIndex by remember { mutableStateOf(0) }
-    val currentRoutine = routines.getOrNull(currentRoutineIndex)
+    val currentRoutine = currentRoutineIndex?.let { routines.getOrNull(it) }
     val currentTrick = currentRoutine?.tricks?.getOrNull(currentTrickIndex)
 
     Scaffold(
@@ -29,27 +31,27 @@ fun SkateTrackWearApp(routines: List<Routine>, requestRoutines: () -> Unit, send
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Button(onClick = requestRoutines) {
-                    Text("Get Routines")
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = sendMessage) {
-                    Text("Send Message to Mobile")
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                if (currentRoutine != null && currentTrick != null) {
-                    Text(text = "Routine: ${currentRoutine.name}")
-                    Spacer(modifier = Modifier.height(8.dp))
+                if (currentRoutine == null) {
+                    Text("Select a Routine")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    routines.forEachIndexed { index, routine ->
+
+                        Button(onClick = { currentRoutineIndex = index }) {
+                            Text(routine.name)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                } else if (currentTrick != null) {
                     Text(text = "Trick: ${currentTrick.trick}")
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = "Lands: ${currentTrick.lands.size}/${currentTrick.landingGoal}")
                     Spacer(modifier = Modifier.height(16.dp))
                     Row {
-                        Button(onClick = { logAttempt(currentRoutineIndex, currentTrickIndex, false) }) {
+                        Button(onClick = { logAttempt(currentRoutineIndex!!, currentTrickIndex, false) }) {
                             Text("No Land")
                         }
                         Spacer(modifier = Modifier.width(8.dp))
-                        Button(onClick = { logAttempt(currentRoutineIndex, currentTrickIndex, true) }) {
+                        Button(onClick = { logAttempt(currentRoutineIndex!!, currentTrickIndex, true) }) {
                             Text("Land")
                         }
                     }

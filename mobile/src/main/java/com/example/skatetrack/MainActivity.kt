@@ -3,6 +3,7 @@ package com.example.skatetrack
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -12,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.tasks.OnSuccessListener
+import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
@@ -35,10 +37,15 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
 
         setupWearable()
 
-
         findViewById<Button>(R.id.send_message_button).setOnClickListener {
             Log.d(TAG, "I'm sending a message!")
             sendMessageToWearable()
+        }
+
+        findViewById<Button>(R.id.button_routines).setOnClickListener {
+            Log.d(TAG, "Navigating to RoutinesSelectionActivity")
+            val intent = Intent(this, RoutinesSelectionActivity::class.java)
+            startActivity(intent)
         }
     }
 
@@ -48,8 +55,41 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
         checkConnectedNodes()
         dataClient.addListener(this)
         Log.d(TAG, "dataClient setupWearable")
+        checkDataLayerConnection()
 
     }
+
+    private fun checkConnectedNodes() {
+        Wearable.getNodeClient(this).connectedNodes
+            .addOnSuccessListener(OnSuccessListener<List<Node>> { nodes ->
+                if (nodes.isEmpty()) {
+                    Log.d(TAG, "No connected nodes found")
+                } else {
+                    for (node in nodes) {
+                        Log.d(TAG, "Connected node: " + node.displayName)
+                    }
+                }
+            }).addOnFailureListener {
+                Log.e(TAG, "Failed to get connected nodes", it)
+            }
+    }
+
+    private fun checkDataLayerConnection() {
+        Log.d(TAG, "Checking data layer")
+        Wearable.getCapabilityClient(this)
+            .getCapability("data_layer_capability", CapabilityClient.FILTER_REACHABLE)
+            .addOnSuccessListener { capabilityInfo ->
+                if (capabilityInfo.nodes.isNotEmpty()) {
+                    Log.d(TAG, "Data Layer API is connected")
+                } else {
+                    Log.d(TAG, "No nodes found for Data Layer API")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error checking Data Layer API connection", e)
+            }
+    }
+
 
     @SuppressLint("VisibleForTests")
     private fun sendMessageToWearable() {
@@ -61,16 +101,18 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
             }).addOnFailureListener {
                 Log.e(TAG, "Failed to get connected nodes", it)
             }
-//        val putDataReq: PutDataRequest = PutDataMapRequest.create("/message").apply {
-//            dataMap.putString("message", "Sent from mobile")
-//        }.asPutDataRequest()
-//
-//        Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
-//            Log.d(TAG, "Message sent to wearable")
-//            Toast.makeText(this, "Message sent to wearable", Toast.LENGTH_SHORT).show()
-//        }.addOnFailureListener {
-//            Log.e(TAG, "Failed to send message", it)
-//        }
+
+
+        val putDataReq: PutDataRequest = PutDataMapRequest.create("/message").apply {
+            dataMap.putString("message", "Sent from mobile")
+        }.asPutDataRequest()
+
+        Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
+            Log.d(TAG, "Message sent to wearable")
+            Toast.makeText(this, "Message sent to wearable", Toast.LENGTH_SHORT).show()
+        }.addOnFailureListener {
+            Log.e(TAG, "Failed to send message", it)
+        }
     }
 
     private fun sendMessageToNode(node: Node) {
@@ -99,20 +141,7 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
         }
     }
 
-    private fun checkConnectedNodes() {
-        Wearable.getNodeClient(this).connectedNodes
-            .addOnSuccessListener(OnSuccessListener<List<Node>> { nodes ->
-                if (nodes.isEmpty()) {
-                    Log.d(TAG, "No connected nodes found")
-                } else {
-                    for (node in nodes) {
-                        Log.d(TAG, "Connected node: " + node.displayName)
-                    }
-                }
-            }).addOnFailureListener {
-                Log.e(TAG, "Failed to get connected nodes", it)
-            }
-    }
+
 
     @SuppressLint("VisibleForTests")
     override fun onDataChanged(dataEvents: DataEventBuffer) {

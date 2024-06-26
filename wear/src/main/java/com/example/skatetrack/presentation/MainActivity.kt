@@ -5,8 +5,8 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.gms.wearable.DataClient
@@ -29,12 +29,12 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
 
     private lateinit var dataClient: DataClient
     private val TAG = "SkateTrackWear"
-    private val routines = mutableListOf<Routine>()
+    private val routines = mutableStateListOf<Routine>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            SkateTrackWearApp(routines, ::requestRoutinesFromPhone, ::sendMessageToMobile) { routineIndex, trickIndex, landed ->
+            SkateTrackWearApp(routines) { routineIndex, trickIndex, landed ->
                 val (updatedRoutineIndex, updatedTrickIndex) = logAttempt(routineIndex, trickIndex, landed)
                 // update the UI state with the new indices if needed
             }
@@ -50,9 +50,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                 }
             })
 
-        // Request routines from the mobile app
-        requestRoutinesFromPhone()
-
+        // Listen for data changes
         dataClient.addListener(this)
     }
 
@@ -66,28 +64,6 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         super.onPause()
         dataClient.removeListener(this)
         Log.d(TAG, "onPause: Listener removed")
-    }
-
-    private fun requestRoutinesFromPhone() {
-        val putDataReq: PutDataRequest = PutDataMapRequest.create("/get_routines").asPutDataRequest()
-        Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
-            Log.d(TAG, "Request sent to phone to get routines")
-        }.addOnFailureListener {
-            Log.e(TAG, "Failed to send request", it)
-        }
-    }
-
-    private fun sendMessageToMobile() {
-        val putDataReq: PutDataRequest = PutDataMapRequest.create("/message").apply {
-            dataMap.putString("message", "Sent from watch")
-        }.asPutDataRequest()
-
-        Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
-            Log.d(TAG, "Message sent to mobile")
-            Toast.makeText(this, "Message sent to mobile", Toast.LENGTH_SHORT).show()
-        }.addOnFailureListener {
-            Log.e(TAG, "Failed to send message", it)
-        }
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
