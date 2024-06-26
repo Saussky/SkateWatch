@@ -6,24 +6,15 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.tasks.OnSuccessListener
-import com.google.android.gms.wearable.DataClient
-import com.google.android.gms.wearable.DataEvent
-import com.google.android.gms.wearable.DataEventBuffer
-import com.google.android.gms.wearable.DataMapItem
-import com.google.android.gms.wearable.Node
-import com.google.android.gms.wearable.PutDataMapRequest
-import com.google.android.gms.wearable.PutDataRequest
-import com.google.android.gms.wearable.Wearable
-import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken
+import com.google.android.gms.wearable.*
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.sql.Time
-import java.util.Date
+import java.util.*
 
 class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
 
@@ -34,10 +25,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            SkateTrackWearApp(routines) { routineIndex, trickIndex, landed ->
-                val (updatedRoutineIndex, updatedTrickIndex) = logAttempt(routineIndex, trickIndex, landed)
-                // update the UI state with the new indices if needed
-            }
+            SkateTrackWearApp(routines, ::logAttempt)
         }
 
         dataClient = Wearable.getDataClient(this)
@@ -75,7 +63,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                     val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
                     val routinesJson = dataMap.getString("routines")
                     Log.d(TAG, "Received routines JSON: $routinesJson")
-                    val type = object : TypeToken<List<Routine>>() {}.type
+                    val type = object : com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken<List<Routine>>() {}.type
                     val fetchedRoutines: List<Routine> = Gson().fromJson(routinesJson, type) ?: emptyList()
                     Log.d(TAG, "Parsed routines: $fetchedRoutines")
 
@@ -100,19 +88,27 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         val routine = routines[routineIndex]
         val trick = routine.tricks[trickIndex]
 
+        Log.d(TAG, "Logging attempt for Routine Index: $routineIndex, Trick Index: $trickIndex, Landed: $landed")
+        Log.d(TAG, "Current Routine: $routine")
+        Log.d(TAG, "Current Trick: $trick")
+
         if (landed) {
             trick.lands.add(Land(Date(), Time(System.currentTimeMillis()), speed = 0)) // Speed needs to be captured from sensors
+            Log.d(TAG, "Landed added: ${trick.lands.last()}")
         } else {
             trick.attempts.add(Attempt(Date(), Time(System.currentTimeMillis()), speed = 0))
+            Log.d(TAG, "Attempt added: ${trick.attempts.last()}")
         }
 
         var newTrickIndex = trickIndex
         if (trick.lands.size >= trick.landingGoal) {
             newTrickIndex = (trickIndex + 1) % routine.tricks.size
+            Log.d(TAG, "New Trick Index: $newTrickIndex")
         }
 
         // Update the mobile app with the new data
         val updatedRoutineJson = Gson().toJson(routines)
+        Log.d(TAG, "Updated Routines JSON: $updatedRoutineJson")
         val putDataReq: PutDataRequest = PutDataMapRequest.create("/update_routines").apply {
             dataMap.putString("routines", updatedRoutineJson)
         }.asPutDataRequest()
