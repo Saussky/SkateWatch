@@ -30,7 +30,7 @@ class WearWearableListenerService : WearableListenerService() {
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
-        Log.d(TAG, "Data changed event received")
+        Log.d(TAG, "Data changed event received WEARABLE LISTENER SERVICE")
 
         if (Log.isLoggable(TAG, Log.DEBUG)) {
             Log.d(TAG, "onDataChanged: $dataEvents")

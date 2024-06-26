@@ -1,19 +1,12 @@
 package com.example.skatetrack
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import com.google.android.gms.tasks.OnSuccessListener
-import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
@@ -37,13 +30,7 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
 
         setupWearable()
 
-        findViewById<Button>(R.id.send_message_button).setOnClickListener {
-            Log.d(TAG, "I'm sending a message!")
-            sendMessageToWearable()
-        }
-
         findViewById<Button>(R.id.button_routines).setOnClickListener {
-            Log.d(TAG, "Navigating to RoutinesSelectionActivity")
             val intent = Intent(this, RoutinesSelectionActivity::class.java)
             startActivity(intent)
         }
@@ -54,9 +41,6 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
         dataClient = Wearable.getDataClient(this)
         checkConnectedNodes()
         dataClient.addListener(this)
-        Log.d(TAG, "dataClient setupWearable")
-        checkDataLayerConnection()
-
     }
 
     private fun checkConnectedNodes() {
@@ -71,59 +55,6 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
                 }
             }).addOnFailureListener {
                 Log.e(TAG, "Failed to get connected nodes", it)
-            }
-    }
-
-    private fun checkDataLayerConnection() {
-        Log.d(TAG, "Checking data layer")
-        Wearable.getCapabilityClient(this)
-            .getCapability("data_layer_capability", CapabilityClient.FILTER_REACHABLE)
-            .addOnSuccessListener { capabilityInfo ->
-                if (capabilityInfo.nodes.isNotEmpty()) {
-                    Log.d(TAG, "Data Layer API is connected")
-                } else {
-                    Log.d(TAG, "No nodes found for Data Layer API")
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Error checking Data Layer API connection", e)
-            }
-    }
-
-
-    @SuppressLint("VisibleForTests")
-    private fun sendMessageToWearable() {
-        Wearable.getNodeClient(this).connectedNodes
-            .addOnSuccessListener(OnSuccessListener<List<Node>> { nodes ->
-                for (node in nodes) {
-                    sendMessageToNode(node)
-                }
-            }).addOnFailureListener {
-                Log.e(TAG, "Failed to get connected nodes", it)
-            }
-
-
-        val putDataReq: PutDataRequest = PutDataMapRequest.create("/message").apply {
-            dataMap.putString("message", "Sent from mobile")
-        }.asPutDataRequest()
-
-        Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
-            Log.d(TAG, "Message sent to wearable")
-            Toast.makeText(this, "Message sent to wearable", Toast.LENGTH_SHORT).show()
-        }.addOnFailureListener {
-            Log.e(TAG, "Failed to send message", it)
-        }
-    }
-
-    private fun sendMessageToNode(node: Node) {
-        val message = "Hello from mobile!"
-        Wearable.getMessageClient(this).sendMessage(node.id, "/toast", message.toByteArray(
-            StandardCharsets.UTF_8))
-            .addOnSuccessListener {
-                Log.d(TAG, "Message sent to node: ${node.displayName}")
-            }
-            .addOnFailureListener {
-                Log.e(TAG, "Failed to send message to node", it)
             }
     }
 
@@ -145,43 +76,12 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
 
     @SuppressLint("VisibleForTests")
     override fun onDataChanged(dataEvents: DataEventBuffer) {
-        Log.d(TAG, "Data changed event received")
+        Log.d(TAG, "Data changed event received MAINACTIVITY")
         for (event in dataEvents) {
             if (event.type == DataEvent.TYPE_CHANGED) {
                 val dataItem = event.dataItem
                 Log.d(TAG, "Data path: ${dataItem.uri.path}")
-                when (dataItem.uri.path) {
-                    "/get_routines" -> {
-                        sendRoutinesToWearable()
-                    }
-                    "/message" -> {
-                        val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
-                        val message = dataMap.getString("message")
-                        Log.d(TAG, "Received message: $message")
-                        Toast.makeText(this, "Received from watch: $message", Toast.LENGTH_SHORT).show()
-                    }
-                }
             }
-        }
-    }
-
-    @SuppressLint("VisibleForTests")
-    private fun sendRoutinesToWearable() {
-        val sharedPreferences = getSharedPreferences("routines", Context.MODE_PRIVATE)
-        val gson = Gson()
-        val json = sharedPreferences.getString("routines_list", null)
-        val type = object : TypeToken<List<Routine>>() {}.type
-        val routines: List<Routine> = gson.fromJson(json, type) ?: emptyList()
-
-        val routinesJson = gson.toJson(routines)
-        val putDataReq: PutDataRequest = PutDataMapRequest.create("/routines").apply {
-            dataMap.putString("routines", routinesJson)
-        }.asPutDataRequest()
-
-        Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
-            Log.d(TAG, "Routines sent to wearable")
-        }.addOnFailureListener {
-            Log.e(TAG, "Failed to send routines", it)
         }
     }
 }
