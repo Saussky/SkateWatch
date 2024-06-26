@@ -1,5 +1,6 @@
 package com.example.skatetrack.presentation
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -21,9 +22,12 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     private lateinit var dataClient: DataClient
     private val TAG = "SkateTrackWear"
     private val routines = mutableStateListOf<Routine>()
+    private val PREFS_NAME = "SkateTrackPrefs"
+    private val ROUTINES_KEY = "routines"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        loadRoutinesFromPreferences()
         setContent {
             SkateTrackWearApp(routines, ::logAttempt)
         }
@@ -71,7 +75,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
                         withContext(Dispatchers.Main) {
                             routines.clear()
                             routines.addAll(fetchedRoutines)
-                            Log.d(TAG, "Routines updated in UI")
+                            saveRoutinesToPreferences(fetchedRoutines)
+                            Log.d(TAG, "Routines updated in UI and saved to preferences")
                         }
                     }
                 } else if (dataItem.uri.path == "/message") {
@@ -117,6 +122,31 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             Log.d(TAG, "Updated routines sent to phone")
         }
 
+        // Save the updated routines to preferences
+        saveRoutinesToPreferences(routines)
+
         return Pair(routineIndex, newTrickIndex)
+    }
+
+    private fun saveRoutinesToPreferences(routines: List<Routine>) {
+        val sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        val routinesJson = Gson().toJson(routines)
+        editor.putString(ROUTINES_KEY, routinesJson)
+        editor.apply()
+        Log.d(TAG, "Routines saved to preferences")
+    }
+
+    private fun loadRoutinesFromPreferences() {
+        val sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val routinesJson = sharedPreferences.getString(ROUTINES_KEY, null)
+        if (!routinesJson.isNullOrEmpty()) {
+            val type = object : com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken<List<Routine>>() {}.type
+            val loadedRoutines: List<Routine> = Gson().fromJson(routinesJson, type) ?: emptyList()
+            routines.addAll(loadedRoutines)
+            Log.d(TAG, "Routines loaded from preferences: $loadedRoutines")
+        } else {
+            Log.d(TAG, "No routines found in preferences")
+        }
     }
 }
