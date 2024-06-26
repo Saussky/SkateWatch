@@ -25,8 +25,6 @@ import kotlinx.coroutines.withContext
 import java.sql.Time
 import java.util.Date
 
-
-
 class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
 
     private lateinit var dataClient: DataClient
@@ -61,11 +59,13 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
     override fun onResume() {
         super.onResume()
         dataClient.addListener(this)
+        Log.d(TAG, "onResume: Listener added")
     }
 
     override fun onPause() {
         super.onPause()
         dataClient.removeListener(this)
+        Log.d(TAG, "onPause: Listener removed")
     }
 
     private fun requestRoutinesFromPhone() {
@@ -119,7 +119,6 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             }
         }
     }
-
 
     private fun logAttempt(routineIndex: Int, trickIndex: Int, landed: Boolean): Pair<Int, Int> {
         val routine = routines[routineIndex]

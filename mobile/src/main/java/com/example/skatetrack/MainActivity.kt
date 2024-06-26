@@ -1,11 +1,16 @@
 package com.example.skatetrack
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
@@ -17,10 +22,7 @@ import com.google.android.gms.wearable.PutDataRequest
 import com.google.android.gms.wearable.Wearable
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
+import java.nio.charset.StandardCharsets
 
 class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
     private val PERMISSIONS_REQUEST_CODE = 1001
@@ -31,7 +33,6 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
         Manifest.permission.BLUETOOTH,
         Manifest.permission.BLUETOOTH_ADMIN,
         "com.google.android.providers.gsf.permission.READ_GSERVICES",
-        "com.google.android.permission.PROVIDE_BACKGROUND"
     )
 
     private lateinit var dataClient: DataClient
@@ -41,61 +42,108 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        dataClient = Wearable.getDataClient(this)
-
-        // Check for connected nodes
-        checkConnectedNodes()
-
-        // Listen for data changes
-        dataClient.addListener(this)
-
-        findViewById<Button>(R.id.send_message_button).setOnClickListener {
-            sendMessageToWearable()
-        }
-
+        // Check for permissions
         if (!hasPermissions(requiredPermissions)) {
             ActivityCompat.requestPermissions(this, requiredPermissions, PERMISSIONS_REQUEST_CODE)
+//            ActivityCompat.requestPermissions(this, requiredPermissions, PERMISSIONS_REQUEST_CODE)
+//            Log.d(TAG, "Now should have permissions :o")
+//            Log.d(TAG, "Surly it passes now then? : ${hasPermissions(requiredPermissions)}")
+//            setupWearable()
+
         } else {
+            Log.d(TAG, "Setting up wearable no need to check for permissions :)")
             setupWearable()
+        }
+
+        findViewById<Button>(R.id.send_message_button).setOnClickListener {
+            Log.d(TAG, "I'm sending a message!")
+            sendMessageToWearable()
         }
     }
 
     private fun hasPermissions(permissions: Array<String>): Boolean {
         for (permission in permissions) {
             if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "No Permissions")
                 return false
             }
         }
+        Log.d(TAG, "Permission true yay!")
         return true
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSIONS_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                Log.d(TAG, "Permissions granted, setting up wearable")
+                setupWearable()
+            } else {
+                Log.d(TAG, "Permissions denied")
+                for ((index, result) in grantResults.withIndex()) {
+                    if (result != PackageManager.PERMISSION_GRANTED) {
+                        Log.d(TAG, "Permission denied: ${permissions[index]}")
+                    }
+                }
+                Toast.makeText(this, "Permissions are required for this app", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun setupWearable() {
         dataClient = Wearable.getDataClient(this)
         checkConnectedNodes()
         dataClient.addListener(this)
+        Log.d(TAG, "dataClient setupWearable")
+
     }
 
+    @SuppressLint("VisibleForTests")
     private fun sendMessageToWearable() {
-        val putDataReq: PutDataRequest = PutDataMapRequest.create("/message").apply {
-            dataMap.putString("message", "Sent from mobile")
-        }.asPutDataRequest()
+        Wearable.getNodeClient(this).connectedNodes
+            .addOnSuccessListener(OnSuccessListener<List<Node>> { nodes ->
+                for (node in nodes) {
+                    sendMessageToNode(node)
+                }
+            }).addOnFailureListener {
+                Log.e(TAG, "Failed to get connected nodes", it)
+            }
+//        val putDataReq: PutDataRequest = PutDataMapRequest.create("/message").apply {
+//            dataMap.putString("message", "Sent from mobile")
+//        }.asPutDataRequest()
+//
+//        Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
+//            Log.d(TAG, "Message sent to wearable")
+//            Toast.makeText(this, "Message sent to wearable", Toast.LENGTH_SHORT).show()
+//        }.addOnFailureListener {
+//            Log.e(TAG, "Failed to send message", it)
+//        }
+    }
 
-        Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
-            Log.d(TAG, "Message sent to wearable")
-            Toast.makeText(this, "Message sent to wearable", Toast.LENGTH_SHORT).show()
-        }.addOnFailureListener {
-            Log.e(TAG, "Failed to send message", it)
-        }
+    private fun sendMessageToNode(node: Node) {
+        val message = "Hello from mobile!"
+        Wearable.getMessageClient(this).sendMessage(node.id, "/toast", message.toByteArray(
+            StandardCharsets.UTF_8))
+            .addOnSuccessListener {
+                Log.d(TAG, "Message sent to node: ${node.displayName}")
+            }
+            .addOnFailureListener {
+                Log.e(TAG, "Failed to send message to node", it)
+            }
     }
 
     override fun onResume() {
         super.onResume()
-        dataClient.addListener(this)
+        if (::dataClient.isInitialized) {
+            dataClient.addListener(this)
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        dataClient.removeListener(this)
+        if (::dataClient.isInitialized) {
+            dataClient.removeListener(this)
+        }
     }
 
     private fun checkConnectedNodes() {
@@ -113,11 +161,10 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
             }
     }
 
-
+    @SuppressLint("VisibleForTests")
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         Log.d(TAG, "Data changed event received")
         for (event in dataEvents) {
-            Log.d(TAG, "EVENT??: $event")
             if (event.type == DataEvent.TYPE_CHANGED) {
                 val dataItem = event.dataItem
                 Log.d(TAG, "Data path: ${dataItem.uri.path}")
@@ -136,6 +183,7 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
         }
     }
 
+    @SuppressLint("VisibleForTests")
     private fun sendRoutinesToWearable() {
         val sharedPreferences = getSharedPreferences("routines", Context.MODE_PRIVATE)
         val gson = Gson()
