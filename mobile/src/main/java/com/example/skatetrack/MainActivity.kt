@@ -25,15 +25,6 @@ import com.google.gson.reflect.TypeToken
 import java.nio.charset.StandardCharsets
 
 class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
-    private val PERMISSIONS_REQUEST_CODE = 1001
-
-    private val requiredPermissions = arrayOf(
-        Manifest.permission.WAKE_LOCK,
-        Manifest.permission.INTERNET,
-        Manifest.permission.BLUETOOTH,
-        Manifest.permission.BLUETOOTH_ADMIN,
-        "com.google.android.providers.gsf.permission.READ_GSERVICES",
-    )
 
     private lateinit var dataClient: DataClient
     private val TAG = "SkateTrackMobile"
@@ -42,18 +33,8 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Check for permissions
-        if (!hasPermissions(requiredPermissions)) {
-            ActivityCompat.requestPermissions(this, requiredPermissions, PERMISSIONS_REQUEST_CODE)
-//            ActivityCompat.requestPermissions(this, requiredPermissions, PERMISSIONS_REQUEST_CODE)
-//            Log.d(TAG, "Now should have permissions :o")
-//            Log.d(TAG, "Surly it passes now then? : ${hasPermissions(requiredPermissions)}")
-//            setupWearable()
+        setupWearable()
 
-        } else {
-            Log.d(TAG, "Setting up wearable no need to check for permissions :)")
-            setupWearable()
-        }
 
         findViewById<Button>(R.id.send_message_button).setOnClickListener {
             Log.d(TAG, "I'm sending a message!")
@@ -61,34 +42,6 @@ class MainActivity : AppCompatActivity(), DataClient.OnDataChangedListener {
         }
     }
 
-    private fun hasPermissions(permissions: Array<String>): Boolean {
-        for (permission in permissions) {
-            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "No Permissions")
-                return false
-            }
-        }
-        Log.d(TAG, "Permission true yay!")
-        return true
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSIONS_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                Log.d(TAG, "Permissions granted, setting up wearable")
-                setupWearable()
-            } else {
-                Log.d(TAG, "Permissions denied")
-                for ((index, result) in grantResults.withIndex()) {
-                    if (result != PackageManager.PERMISSION_GRANTED) {
-                        Log.d(TAG, "Permission denied: ${permissions[index]}")
-                    }
-                }
-                Toast.makeText(this, "Permissions are required for this app", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
 
     private fun setupWearable() {
         dataClient = Wearable.getDataClient(this)
