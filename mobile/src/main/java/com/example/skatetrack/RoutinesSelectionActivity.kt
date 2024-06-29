@@ -51,6 +51,13 @@ class RoutinesSelectionActivity : AppCompatActivity() {
         }
     }
 
+    override fun onBackPressed() {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
+        finish()
+    }
+
     private fun clearSharedPreferences(prefName: String) {
         val sharedPreferences = getSharedPreferences(prefName, Context.MODE_PRIVATE)
         val editor = sharedPreferences.edit()
