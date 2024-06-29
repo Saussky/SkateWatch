@@ -103,8 +103,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             trick.lands.add(Land(Date(), Time(System.currentTimeMillis()), speed = 0)) // Speed needs to be captured from sensors
             Log.d(TAG, "Landed added: ${trick.lands.last()}")
         } else {
-            trick.attempts.add(Attempt(Date(), Time(System.currentTimeMillis()), speed = 0))
-            Log.d(TAG, "Attempt added: ${trick.attempts.last()}")
+            trick.noLands.add(NoLand(Date(), Time(System.currentTimeMillis()), speed = 0))
+            Log.d(TAG, "Attempt added: ${trick.noLands.last()}")
         }
 
         var newTrickIndex = trickIndex
@@ -113,8 +113,9 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
             Log.d(TAG, "New Trick Index: $newTrickIndex")
         }
 
-        // Save the updated routine instance to preferences
+        // Save the updated routine instance to preferences and send to the mobile app
         saveRoutineInstanceToPreferences(routine)
+        sendRoutineInstanceToMobile(routine)
 
         return Pair(routineIndex, newTrickIndex)
     }
@@ -123,7 +124,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         val routineTemplate = routines[routineIndex]
         val newRoutineInstance = Routine(
             name = routineTemplate.name,
-            tricks = routineTemplate.tricks.map { it.copy(lands = mutableListOf(), attempts = mutableListOf()) },
+            tricks = routineTemplate.tricks.map { it.copy(lands = mutableListOf(), noLands = mutableListOf()) },
             startTime = Date()
         )
         currentRoutineInstance.value = newRoutineInstance
@@ -148,6 +149,19 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         editor.putString("current_routine_instance", routineJson)
         editor.apply()
         Log.d(TAG, "Current routine instance saved to preferences")
+    }
+
+    private fun sendRoutineInstanceToMobile(routine: Routine) {
+        val routineJson = Gson().toJson(routine)
+        val putDataReq: PutDataRequest = PutDataMapRequest.create("/update_routine_instance").apply {
+            dataMap.putString("routine", routineJson)
+        }.asPutDataRequest()
+
+        Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
+            Log.d(TAG, "Updated routine instance sent to phone: $routineJson")
+        }.addOnFailureListener {
+            Log.e(TAG, "Failed to send updated routine instance", it)
+        }
     }
 
     private fun saveRoutinesToPreferences(routines: List<Routine>) {

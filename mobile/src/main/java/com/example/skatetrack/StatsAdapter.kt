@@ -17,7 +17,7 @@ class StatsAdapter(private val trickStats: List<StatsActivity.TrickStats>) :
     override fun onBindViewHolder(holder: StatsViewHolder, position: Int) {
         val stats = trickStats[position]
         holder.trickNameTextView.text = stats.trickName
-        holder.attemptsTextView.text = "Attempts: ${stats.attempts}"
+        holder.attemptsTextView.text = "Attempts: ${stats.noLands + stats.lands}"
         holder.landsTextView.text = "Lands: ${stats.lands}"
     }
 

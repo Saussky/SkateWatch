@@ -27,23 +27,39 @@ class StatsActivity : AppCompatActivity() {
     }
 
     private fun loadStats() {
-        val sharedPreferences = getSharedPreferences("routines", Context.MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("routine_history", Context.MODE_PRIVATE)
         val gson = Gson()
-        val json = sharedPreferences.getString("routines_list", null)
+        val json = sharedPreferences.getString("routine_history_list", null)
+        if (json == null) {
+            Log.e(TAG, "No routine history found")
+            return
+        }
+
         val type = object : TypeToken<List<Routine>>() {}.type
-        val routines: List<Routine> = gson.fromJson(json, type) ?: emptyList()
+        val routineHistory: List<Routine> = gson.fromJson(json, type) ?: emptyList()
+        Log.d(TAG, "Loaded routine history: $routineHistory")
 
         tricksStats.clear()
-        routines.forEach { routine ->
-            routine.tricks.forEach { trick ->
-                val attemptsCount = trick.attempts.size
+        routineHistory.forEach { routine ->
+            Log.d(TAG, "Processing routine: $routine")
+            routine.tricks?.forEach { trick ->
+                Log.d(TAG, "Processing trick: $trick")
+                val attemptsCount = trick.noLands.size
                 val landsCount = trick.lands.size
-                tricksStats.add(TrickStats(trick.trick, attemptsCount, landsCount))
-            }
+                val existingStats = tricksStats.find { it.trickName == trick.trick }
+                if (existingStats != null) {
+                    existingStats.noLands += attemptsCount
+                    existingStats.lands += landsCount
+                    Log.d(TAG, "Updated existing stats: $existingStats")
+                } else {
+                    tricksStats.add(TrickStats(trick.trick, attemptsCount, landsCount))
+                    Log.d(TAG, "Added new stats: ${TrickStats(trick.trick, attemptsCount, landsCount)}")
+                }
+            } ?: Log.e(TAG, "No tricks found in routine: $routine")
         }
-        Log.d(TAG, "Loaded stats: $tricksStats")
+        Log.d(TAG, "Final stats: $tricksStats")
         recyclerViewStats.adapter?.notifyDataSetChanged()
     }
 
-    data class TrickStats(val trickName: String, val attempts: Int, val lands: Int)
+    data class TrickStats(val trickName: String, var noLands: Int, var lands: Int)
 }

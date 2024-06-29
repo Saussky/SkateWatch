@@ -43,6 +43,19 @@ class RoutinesSelectionActivity : AppCompatActivity() {
         sendRoutinesButton.setOnClickListener {
             sendRoutinesToWearable()
         }
+
+        val clearDataButton: Button = findViewById(R.id.button_clear_data)
+        clearDataButton.setOnClickListener {
+            clearSharedPreferences("routines")
+            clearSharedPreferences("routine_history")
+        }
+    }
+
+    private fun clearSharedPreferences(prefName: String) {
+        val sharedPreferences = getSharedPreferences(prefName, Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.clear()
+        editor.apply()
     }
 
     private fun setupRecyclerView() {
