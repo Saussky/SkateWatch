@@ -59,7 +59,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
     implementation("androidx.navigation:navigation-compose:2.7.7")
-    implementation("com.google.code.gson:gson:2.8.8") // Add Gson dependency
+    implementation("com.google.code.gson:gson:2.8.8")
+    implementation("androidx.compose.material:material-icons-extended:1.5.1")
     implementation(libs.firebase.crashlytics.buildtools)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.5.1")

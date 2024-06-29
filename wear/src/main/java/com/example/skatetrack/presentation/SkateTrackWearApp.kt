@@ -1,12 +1,19 @@
 package com.example.skatetrack.presentation
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import android.util.Log
 
 @Composable
@@ -26,13 +33,6 @@ fun SkateTrackWearApp(
     Log.d(TAG, "ROUTINESSSS: $routines")
 
     Scaffold(
-        topBar = {
-            if (currentRoutineIndex == null) {
-                TopAppBar(
-                    title = { Text("SkateTrack") }
-                )
-            }
-        },
         content = { paddingValues ->
             Column(
                 modifier = Modifier
@@ -43,21 +43,31 @@ fun SkateTrackWearApp(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (currentRoutine == null) {
-                    Text("Select a Routine")
+                    Text("Routines", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                     Spacer(modifier = Modifier.height(16.dp))
-                    routines.forEachIndexed { index, routine ->
-                        Log.d(TAG, "ROUTINE?: ${routine}")
-
-                        Button(onClick = {
-                            startRoutine(index)
-                            currentRoutineIndex = index
-                            currentTrickIndex = 0
-                            attemptCount.value = 0
-                        }) {
-                            Text(routine.name)
+                    Icon(imageVector = Icons.Default.ArrowDropUp, contentDescription = "Scroll up", tint = Color.Gray)
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
+                        items(routines) { routine ->
+                            Button(
+                                onClick = {
+                                    val index = routines.indexOf(routine)
+                                    startRoutine(index)
+                                    currentRoutineIndex = index
+                                    currentTrickIndex = 0
+                                    attemptCount.value = 0
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(routine.name)
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
+                    Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "Scroll down", tint = Color.Gray)
                 } else if (currentTrick != null) {
                     Text(text = currentTrick.trick, fontSize = 24.sp)
                     Spacer(modifier = Modifier.height(8.dp))
