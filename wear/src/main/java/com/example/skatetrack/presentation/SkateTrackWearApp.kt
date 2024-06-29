@@ -10,10 +10,15 @@ import androidx.compose.ui.unit.sp
 import android.util.Log
 
 @Composable
-fun SkateTrackWearApp(routines: List<Routine>, logAttempt: (Int, Int, Boolean) -> Pair<Int, Int>) {
+fun SkateTrackWearApp(
+    routines: List<Routine>,
+    logAttempt: (Int, Int, Boolean) -> Pair<Int, Int>,
+    startRoutine: (Int) -> Unit,
+    currentRoutineInstance: MutableState<Routine?>
+) {
     var currentRoutineIndex by remember { mutableStateOf<Int?>(null) }
     var currentTrickIndex by remember { mutableStateOf(0) }
-    val currentRoutine = remember(currentRoutineIndex) { currentRoutineIndex?.let { routines.getOrNull(it) } }
+    val currentRoutine = currentRoutineInstance.value
     val currentTrick = remember(currentRoutine, currentTrickIndex) { currentRoutine?.tricks?.getOrNull(currentTrickIndex) }
     val attemptCount = remember { mutableStateOf(0) }
     val TAG = "SkateTrackWear"
@@ -44,6 +49,7 @@ fun SkateTrackWearApp(routines: List<Routine>, logAttempt: (Int, Int, Boolean) -
                         Log.d(TAG, "ROUTINE?: ${routine}")
 
                         Button(onClick = {
+                            startRoutine(index)
                             currentRoutineIndex = index
                             currentTrickIndex = 0
                             attemptCount.value = 0
@@ -74,6 +80,7 @@ fun SkateTrackWearApp(routines: List<Routine>, logAttempt: (Int, Int, Boolean) -
                             if (result.second == 0 && currentTrickIndex != result.second) {
                                 currentRoutineIndex = null
                                 currentTrickIndex = 0
+                                currentRoutineInstance.value = null
                             } else {
                                 currentRoutineIndex = result.first
                                 currentTrickIndex = result.second
@@ -92,6 +99,7 @@ fun SkateTrackWearApp(routines: List<Routine>, logAttempt: (Int, Int, Boolean) -
                             if (result.second == 0 && currentTrickIndex != result.second) {
                                 currentRoutineIndex = null
                                 currentTrickIndex = 0
+                                currentRoutineInstance.value = null
                             } else {
                                 currentRoutineIndex = result.first
                                 currentTrickIndex = result.second

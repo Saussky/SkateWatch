@@ -64,7 +64,7 @@ class EditRoutineActivity : AppCompatActivity() {
 
         val routineIndex = routines.indexOfFirst { it.name == routineName }
         if (routineIndex != -1) {
-            routines[routineIndex] = Routine(routineName, tricks)
+            routines[routineIndex] = Routine(routineName, tricks,)
         }
 
         val updatedJson = gson.toJson(routines)

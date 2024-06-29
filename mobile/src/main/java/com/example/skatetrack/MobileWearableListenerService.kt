@@ -9,6 +9,7 @@ import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import java.util.Date
 
 class MobileWearableListenerService : WearableListenerService() {
     private val TAG = "MobileWearService"
@@ -30,6 +31,16 @@ class MobileWearableListenerService : WearableListenerService() {
 
                         saveRoutinesToPreferences(updatedRoutines)
                     }
+                    "/new_routine_instance" -> {
+                        val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
+                        val routineJson = dataMap.getString("routine")
+                        Log.d(TAG, "Received new routine instance JSON: $routineJson")
+                        val type = object : TypeToken<Routine>() {}.type
+                        val newRoutine: Routine = Gson().fromJson(routineJson, type) ?: return
+                        Log.d(TAG, "Parsed new routine: $newRoutine")
+
+                        addRoutineInstanceToHistory(newRoutine)
+                    }
                     "/get_routines" -> {
                         sendRoutinesToWearable()
                     }
@@ -45,6 +56,23 @@ class MobileWearableListenerService : WearableListenerService() {
         editor.putString("routines_list", routinesJson)
         editor.apply()
         Log.d(TAG, "Routines saved to preferences: $routines")
+    }
+
+    private fun addRoutineInstanceToHistory(newRoutine: Routine) {
+        val sharedPreferences = getSharedPreferences("routine_history", MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        val gson = Gson()
+
+        val historyJson = sharedPreferences.getString("routine_history_list", null)
+        val type = object : TypeToken<List<Routine>>() {}.type
+        val routineHistory: MutableList<Routine> = gson.fromJson(historyJson, type) ?: mutableListOf()
+
+        routineHistory.add(newRoutine)
+        val updatedHistoryJson = gson.toJson(routineHistory)
+
+        editor.putString("routine_history_list", updatedHistoryJson)
+        editor.apply()
+        Log.d(TAG, "New routine instance added to history: $newRoutine")
     }
 
     private fun sendRoutinesToWearable() {
