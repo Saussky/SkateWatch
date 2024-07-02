@@ -109,7 +109,13 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
 
         var newTrickIndex = trickIndex
         if (trick.lands.size >= trick.landingGoal) {
-            newTrickIndex = (trickIndex + 1) % routine.tricks.size
+            if (trickIndex + 1 >= routine.tricks.size) {
+                // If it's the last trick, reset to the start screen
+                currentRoutineInstance.value = null
+                return Pair(routineIndex, 0)
+            } else {
+                newTrickIndex = trickIndex + 1
+            }
             Log.d(TAG, "New Trick Index: $newTrickIndex")
         }
 

@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import android.util.Log
-
 @Composable
 fun SkateTrackWearApp(
     routines: List<Routine>,
@@ -38,13 +37,13 @@ fun SkateTrackWearApp(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(16.dp),
+                    .padding(8.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (currentRoutine == null) {
                     Text("Routines", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Icon(imageVector = Icons.Default.ArrowDropUp, contentDescription = "Scroll up", tint = Color.Gray)
                     LazyColumn(
                         modifier = Modifier
@@ -60,11 +59,12 @@ fun SkateTrackWearApp(
                                     currentTrickIndex = 0
                                     attemptCount.value = 0
                                 },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
                             ) {
                                 Text(routine.name)
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
                     Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "Scroll down", tint = Color.Gray)
