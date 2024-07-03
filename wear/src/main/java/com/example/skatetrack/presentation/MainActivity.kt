@@ -1,6 +1,10 @@
 package com.example.skatetrack.presentation
 
 import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -17,10 +21,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.sql.Time
 import java.util.*
+import kotlin.math.sqrt
 
-class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
+class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, SensorEventListener {
 
     private lateinit var dataClient: DataClient
+    private lateinit var sensorManager: SensorManager
+    private var accelerometer: Sensor? = null
+    private var maxSpeed = 0.0
+
     private val TAG = "SkateTrackWear"
     private val routines = mutableStateListOf<Routine>()
     private val PREFS_NAME = "SkateTrackPrefs"
@@ -46,18 +55,28 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
 
         // Listen for data changes
         dataClient.addListener(this)
+
+        // Set up the accelerometer
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     }
 
     override fun onResume() {
         super.onResume()
         dataClient.addListener(this)
         Log.d(TAG, "onResume: Listener added")
+
+        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL)
+
     }
 
     override fun onPause() {
         super.onPause()
         dataClient.removeListener(this)
         Log.d(TAG, "onPause: Listener removed")
+
+        sensorManager.unregisterListener(this)
+
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
@@ -91,6 +110,31 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         }
     }
 
+    override fun onSensorChanged(event: SensorEvent?) {
+        event?.let {
+            if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+                val x = event.values[0]
+                val y = event.values[1]
+                val z = event.values[2]
+
+                // Calculate the magnitude of the acceleration vector
+                val acceleration = sqrt((x * x + y * y + z * z).toDouble())
+
+                // Update maxSpeed if the current acceleration is higher
+                if (acceleration > maxSpeed) {
+                    Log.d(TAG, "New max! $acceleration")
+
+                    maxSpeed = acceleration
+                }
+            }
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        Log.d(TAG, "accuracy changed :(")
+
+    }
+
     private fun logAttempt(routineIndex: Int, trickIndex: Int, landed: Boolean): Pair<Int, Int> {
         val routine = currentRoutineInstance.value ?: return Pair(routineIndex, trickIndex)
         val trick = routine.tricks[trickIndex]
@@ -100,12 +144,15 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener {
         Log.d(TAG, "Current Trick: $trick")
 
         if (landed) {
-            trick.lands.add(Land(Date(), Time(System.currentTimeMillis()), speed = 0)) // Speed needs to be captured from sensors
+            trick.lands.add(Land(Date(), Time(System.currentTimeMillis()), speed = maxSpeed)) // Use maxSpeed
             Log.d(TAG, "Landed added: ${trick.lands.last()}")
         } else {
-            trick.noLands.add(NoLand(Date(), Time(System.currentTimeMillis()), speed = 0))
+            trick.noLands.add(NoLand(Date(), Time(System.currentTimeMillis()), speed = maxSpeed)) // Use maxSpeed
             Log.d(TAG, "Attempt added: ${trick.noLands.last()}")
         }
+
+        // Reset maxSpeed for the next attempt
+        maxSpeed = 0.0
 
         var newTrickIndex = trickIndex
         if (trick.lands.size >= trick.landingGoal) {

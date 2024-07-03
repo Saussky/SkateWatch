@@ -62,6 +62,8 @@ dependencies {
     implementation("com.google.code.gson:gson:2.8.8")
     implementation("androidx.compose.material:material-icons-extended:1.5.1")
     implementation(libs.firebase.crashlytics.buildtools)
+    implementation("com.google.android.gms:play-services-base:17.6.0")
+    implementation("com.google.android.gms:play-services-wearable:17.1.0")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.5.1")
     debugImplementation("androidx.compose.ui:ui-tooling:1.5.1")

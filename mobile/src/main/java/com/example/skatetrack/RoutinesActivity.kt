@@ -53,8 +53,8 @@ class RoutinesActivity : AppCompatActivity() {
     private fun setupSpinners() {
         val stances = listOf("Reg", "Switch", "Nollie", "Fakie")
         val tricks = listOf(
-            "Ollie", "Shuv", "F Shuv", "Kickflip", "Heelflip", "Varial Flip", "Varial Heel", "Tre Flip",
-            "Hardflip", "Inward Heelflip", "Laser Flip", "Impossible", "Bigspin Flip"
+            "Ollie", "Shuv", "F Shuv", "B 180", "F 180", "Kickflip", "Heelflip", "B Flip", "F Flip", "B Heel", "F Heel", "Varial Flip", "Varial Heel", "B Bigspin", "F Bigspin", "Tre Flip",
+            "Hardflip", "Inward Heelflip", "Laser Flip", "Impossible", "Bigsflip"
         )
 
         val stanceAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, stances)

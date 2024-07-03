@@ -6,13 +6,13 @@ import java.util.Date
 data class NoLand(
     val date: Date,
     val time: Time,
-    val speed: Int
+    val speed: Double
 )
 
 data class Land(
     val date: Date,
     val time: Time,
-    val speed: Int
+    val speed: Double
 )
 
 data class Trick(

@@ -46,14 +46,18 @@ class StatsActivity : AppCompatActivity() {
                 Log.d(TAG, "Processing trick: $trick")
                 val attemptsCount = trick.noLands.size
                 val landsCount = trick.lands.size
-                val existingStats = tricksStats.find { it.trickName == trick.trick }
+                val maxSpeedLands = trick.lands.maxOfOrNull { it.speed } ?: 0.0
+                val maxSpeedNoLands = trick.noLands.maxOfOrNull { it.speed } ?: 0.0
+                val maxSpeed = maxOf(maxSpeedLands, maxSpeedNoLands)
+                val existingStats = tricksStats.find { it.trickName == trick.trick && it.stance == trick.stance }
                 if (existingStats != null) {
                     existingStats.noLands += attemptsCount
                     existingStats.lands += landsCount
+                    existingStats.maxSpeed = maxOf(existingStats.maxSpeed, maxSpeed)
                     Log.d(TAG, "Updated existing stats: $existingStats")
                 } else {
-                    tricksStats.add(TrickStats(trick.trick, attemptsCount, landsCount))
-                    Log.d(TAG, "Added new stats: ${TrickStats(trick.trick, attemptsCount, landsCount)}")
+                    tricksStats.add(TrickStats(trick.trick, trick.stance, attemptsCount, landsCount, maxSpeed))
+                    Log.d(TAG, "Added new stats: ${TrickStats(trick.trick, trick.stance, attemptsCount, landsCount, maxSpeed)}")
                 }
             } ?: Log.e(TAG, "No tricks found in routine: $routine")
         }
@@ -61,5 +65,5 @@ class StatsActivity : AppCompatActivity() {
         recyclerViewStats.adapter?.notifyDataSetChanged()
     }
 
-    data class TrickStats(val trickName: String, var noLands: Int, var lands: Int)
+    data class TrickStats(val trickName: String, val stance: String, var noLands: Int, var lands: Int, var maxSpeed: Double)
 }

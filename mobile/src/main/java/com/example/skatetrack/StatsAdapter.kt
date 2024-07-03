@@ -16,9 +16,10 @@ class StatsAdapter(private val trickStats: List<StatsActivity.TrickStats>) :
 
     override fun onBindViewHolder(holder: StatsViewHolder, position: Int) {
         val stats = trickStats[position]
-        holder.trickNameTextView.text = stats.trickName
+        holder.trickNameTextView.text = "${stats.stance} ${stats.trickName}"
         holder.attemptsTextView.text = "Attempts: ${stats.noLands + stats.lands}"
         holder.landsTextView.text = "Lands: ${stats.lands}"
+        holder.maxSpeedTextView.text = "Max Speed: ${stats.maxSpeed}"
     }
 
     override fun getItemCount(): Int {
@@ -29,5 +30,6 @@ class StatsAdapter(private val trickStats: List<StatsActivity.TrickStats>) :
         val trickNameTextView: TextView = itemView.findViewById(R.id.textView_trickName)
         val attemptsTextView: TextView = itemView.findViewById(R.id.textView_attempts)
         val landsTextView: TextView = itemView.findViewById(R.id.textView_lands)
+        val maxSpeedTextView: TextView = itemView.findViewById(R.id.textView_maxSpeed)
     }
 }

@@ -69,7 +69,7 @@ fun SkateTrackWearApp(
                     }
                     Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "Scroll down", tint = Color.Gray)
                 } else if (currentTrick != null) {
-                    Text(text = currentTrick.trick, fontSize = 24.sp)
+                    Text(text = "${currentTrick.stance} ${currentTrick.trick}", fontSize = 24.sp)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = "Lands: ${currentTrick.lands.size}/${currentTrick.landingGoal}")
                     Spacer(modifier = Modifier.height(8.dp))
