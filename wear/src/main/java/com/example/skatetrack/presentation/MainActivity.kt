@@ -7,6 +7,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,6 +23,9 @@ import kotlinx.coroutines.withContext
 import java.sql.Time
 import java.util.*
 import kotlin.math.sqrt
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.input.pointer.pointerInput
 
 class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, SensorEventListener {
 
@@ -35,12 +39,14 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, Sens
     private val PREFS_NAME = "SkateTrackPrefs"
     private val ROUTINES_KEY = "routines"
     private val currentRoutineInstance = mutableStateOf<Routine?>(null)
+    private val currentTrickIndex = mutableIntStateOf(0)
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         loadRoutinesFromPreferences()
         setContent {
-            SkateTrackWearApp(routines, ::logAttempt, ::startRoutine, currentRoutineInstance)
+            SkateTrackWearApp(routines, ::logAttempt, ::startRoutine, currentRoutineInstance, ::skipCurrentTrick, currentTrickIndex)
         }
 
         dataClient = Wearable.getDataClient(this)
@@ -76,7 +82,6 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, Sens
         Log.d(TAG, "onPause: Listener removed")
 
         sensorManager.unregisterListener(this)
-
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
@@ -134,6 +139,53 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, Sens
         Log.d(TAG, "accuracy changed :(")
 
     }
+
+    private fun skipCurrentTrick() {
+        val currentRoutine = currentRoutineInstance.value ?: return
+        val currentTrickIndex = this.currentTrickIndex.value
+
+        if (currentTrickIndex == -1 || currentTrickIndex + 1 >= currentRoutine.tricks.size) {
+            // End routine or no more tricks to skip
+            currentRoutineInstance.value = null
+            return
+        }
+
+        val newTrickIndex = currentTrickIndex + 1
+
+        // Update the currentRoutine with a new trick list to force recomposition
+        val updatedRoutine = currentRoutine.copy(
+            tricks = currentRoutine.tricks.toMutableList().apply {
+                this[newTrickIndex] = this[newTrickIndex].copy()
+                Log.e(TAG, "new trick from main activity: ${this[newTrickIndex]}")
+            }
+        )
+        currentRoutineInstance.value = updatedRoutine
+        this.currentTrickIndex.value = newTrickIndex // Update the currentTrickIndex state
+        Log.d(TAG, "Updated routine instance: $updatedRoutine")
+
+        currentRoutineInstance.value?.let { saveRoutineInstanceToPreferences(it) }
+        currentRoutineInstance.value?.let { sendRoutineInstanceToMobile(it) }
+    }
+
+    private fun logSkipEvent(routineIndex: Int, trickIndex: Int, trick: Trick) {
+        val skipEvent = SkipEvent(
+            routineName = routines[routineIndex].name,
+            trickName = trick.trick,
+            skipTime = Date()
+        )
+        // Send skip event to mobile device
+        val skipEventJson = Gson().toJson(skipEvent)
+        val putDataReq: PutDataRequest = PutDataMapRequest.create("/skip_event").apply {
+            dataMap.putString("skip_event", skipEventJson)
+        }.asPutDataRequest()
+
+        Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
+            Log.d(TAG, "Skip event sent to phone: $skipEventJson")
+        }.addOnFailureListener {
+            Log.e(TAG, "Failed to send skip event", it)
+        }
+    }
+
 
     private fun logAttempt(routineIndex: Int, trickIndex: Int, landed: Boolean): Pair<Int, Int> {
         val routine = currentRoutineInstance.value ?: return Pair(routineIndex, trickIndex)
