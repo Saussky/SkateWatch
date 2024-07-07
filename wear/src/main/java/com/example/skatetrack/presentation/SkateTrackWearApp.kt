@@ -26,7 +26,8 @@ fun SkateTrackWearApp(
     startRoutine: (Int) -> Unit,
     currentRoutineInstance: MutableState<Routine?>,
     skipCurrentTrick: () -> Unit,
-    currentTrickIndexState: MutableState<Int> // Pass the currentTrickIndex state as a parameter
+    currentTrickIndexState: MutableState<Int>,
+    lastSpeed: MutableState<Double> // Add lastSpeed parameter
 ) {
     var currentRoutineIndex by remember { mutableStateOf<Int?>(null) }
     val currentTrickIndex = currentTrickIndexState
@@ -98,6 +99,7 @@ fun SkateTrackWearApp(
                                     currentRoutineIndex = index
                                     currentTrickIndex.value = 0
                                     attemptCount.value = 0
+                                    lastSpeed.value = 0.0
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -117,6 +119,8 @@ fun SkateTrackWearApp(
                         Text(text = "Lands: ${trick.lands.size}/${trick.landingGoal}")
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = "Attempts: ${attemptCount.value}")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "Last Speed: ${String.format("%.2f", lastSpeed.value)} km/h")
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -127,8 +131,10 @@ fun SkateTrackWearApp(
                                 val result = logAttempt(currentRoutineIndex!!, currentTrickIndex.value, false)
                                 if (currentTrickIndex.value != result.second) {
                                     attemptCount.value = 0
+                                    lastSpeed.value = 0.0
                                 } else {
                                     attemptCount.value += 1
+                                    lastSpeed.value = trick.noLands.lastOrNull()?.speed ?: 0.0
                                 }
                                 if (result.second == 0 && currentTrickIndex.value != result.second) {
                                     currentRoutineIndex = null
@@ -146,8 +152,10 @@ fun SkateTrackWearApp(
                                 val result = logAttempt(currentRoutineIndex!!, currentTrickIndex.value, true)
                                 if (currentTrickIndex.value != result.second) {
                                     attemptCount.value = 0
+                                    lastSpeed.value = 0.0
                                 } else {
                                     attemptCount.value += 1
+                                    lastSpeed.value = trick.lands.lastOrNull()?.speed ?: 0.0
                                 }
                                 if (result.second == 0 && currentTrickIndex.value != result.second) {
                                     currentRoutineIndex = null

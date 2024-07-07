@@ -7,7 +7,6 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.util.Log
-import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,9 +22,7 @@ import kotlinx.coroutines.withContext
 import java.sql.Time
 import java.util.*
 import kotlin.math.sqrt
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.ui.input.pointer.pointerInput
 
 class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, SensorEventListener {
 
@@ -40,13 +37,14 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, Sens
     private val ROUTINES_KEY = "routines"
     private val currentRoutineInstance = mutableStateOf<Routine?>(null)
     private val currentTrickIndex = mutableIntStateOf(0)
+    private val lastSpeed = mutableStateOf(0.0)
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         loadRoutinesFromPreferences()
         setContent {
-            SkateTrackWearApp(routines, ::logAttempt, ::startRoutine, currentRoutineInstance, ::skipCurrentTrick, currentTrickIndex)
+            SkateTrackWearApp(routines, ::logAttempt, ::startRoutine, currentRoutineInstance, ::skipCurrentTrick, currentTrickIndex, lastSpeed)
         }
 
         dataClient = Wearable.getDataClient(this)
@@ -195,15 +193,18 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, Sens
         Log.d(TAG, "Current Routine: $routine")
         Log.d(TAG, "Current Trick: $trick")
 
+        val speedKmH = maxSpeed * 3.6 // Convert m/s to km/h
+
         if (landed) {
-            trick.lands.add(Land(Date(), Time(System.currentTimeMillis()), speed = maxSpeed)) // Use maxSpeed
+            trick.lands.add(Land(Date(), Time(System.currentTimeMillis()), speed = speedKmH))
             Log.d(TAG, "Landed added: ${trick.lands.last()}")
         } else {
-            trick.noLands.add(NoLand(Date(), Time(System.currentTimeMillis()), speed = maxSpeed)) // Use maxSpeed
+            trick.noLands.add(NoLand(Date(), Time(System.currentTimeMillis()), speed = speedKmH))
             Log.d(TAG, "Attempt added: ${trick.noLands.last()}")
         }
 
         // Reset maxSpeed for the next attempt
+        lastSpeed.value = speedKmH
         maxSpeed = 0.0
 
         var newTrickIndex = trickIndex
