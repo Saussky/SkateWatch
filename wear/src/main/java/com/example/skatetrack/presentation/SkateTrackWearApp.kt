@@ -17,17 +17,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.util.Log
+import com.example.skatetrack.data.com.example.skatetrack.presentation.TrickRepository
 import kotlinx.coroutines.*
-
 @Composable
 fun SkateTrackWearApp(
     routines: List<Routine>,
     logAttempt: (Int, Int, Boolean) -> Pair<Int, Int>,
     startRoutine: (Int) -> Unit,
+    startTrick: (Trick) -> Unit,
     currentRoutineInstance: MutableState<Routine?>,
     skipCurrentTrick: () -> Unit,
     currentTrickIndexState: MutableState<Int>,
-    lastSpeed: MutableState<Double> // Add lastSpeed parameter
+    lastSpeed: MutableState<Double>
 ) {
     var currentRoutineIndex by remember { mutableStateOf<Int?>(null) }
     val currentTrickIndex = currentTrickIndexState
@@ -35,7 +36,7 @@ fun SkateTrackWearApp(
 
     // Debounce flag to prevent multiple skipCurrentTrick calls
     var debounce by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope() // Remember a coroutine scope
+    val scope = rememberCoroutineScope()
 
     // Ensure the current trick index is updated when the current routine changes
     LaunchedEffect(currentRoutine) {
@@ -54,10 +55,6 @@ fun SkateTrackWearApp(
     val attemptCount = remember { mutableStateOf(0) }
     val TAG = "SkateTrackWear"
 
-    Log.d(TAG, "ROUTINESSSS: $routines")
-    Log.d(TAG, "Current Routine: $currentRoutine")
-    Log.d(TAG, "Current Trick: $currentTrick")
-
     Scaffold(
         content = { paddingValues ->
             Column(
@@ -67,11 +64,10 @@ fun SkateTrackWearApp(
                     .padding(8.dp)
                     .pointerInput(Unit) {
                         detectHorizontalDragGestures { change, dragAmount ->
-                            if (dragAmount < -30 && !debounce) { // Swiped from right to left and debounce is false
-                                debounce = true // Set debounce to true
+                            if (dragAmount < -30 && !debounce) {
+                                debounce = true
                                 skipCurrentTrick()
                                 change.consume()
-                                // Reset debounce after a short delay
                                 scope.launch {
                                     delay(300)
                                     debounce = false
@@ -110,6 +106,31 @@ fun SkateTrackWearApp(
                         }
                     }
                     Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "Scroll down", tint = Color.Gray)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Tricks", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
+                        items(TrickRepository.getAllTricks()) { trick ->
+                            Button(
+                                onClick = {
+                                    startTrick(trick)
+                                    currentRoutineIndex = null
+                                    currentTrickIndex.value = 0
+                                    attemptCount.value = 0
+                                    lastSpeed.value = 0.0
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Text("${trick.stance} ${trick.trick}")
+                            }
+                        }
+                    }
                 } else {
                     currentTrick?.let { trick ->
                         Log.d(TAG, "CURRENT TRICK: $trick")
@@ -128,7 +149,7 @@ fun SkateTrackWearApp(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Button(onClick = {
-                                val result = logAttempt(currentRoutineIndex!!, currentTrickIndex.value, false)
+                                val result = logAttempt(currentRoutineIndex ?: 0, currentTrickIndex.value, false)
                                 if (currentTrickIndex.value != result.second) {
                                     attemptCount.value = 0
                                     lastSpeed.value = 0.0
@@ -137,11 +158,8 @@ fun SkateTrackWearApp(
                                     lastSpeed.value = trick.noLands.lastOrNull()?.speed ?: 0.0
                                 }
                                 if (result.second == 0 && currentTrickIndex.value != result.second) {
-                                    currentRoutineIndex = null
-                                    currentTrickIndex.value = 0
                                     currentRoutineInstance.value = null
                                 } else {
-                                    currentRoutineIndex = result.first
                                     currentTrickIndex.value = result.second
                                 }
                             }, modifier = Modifier.weight(1f)) {
@@ -149,7 +167,7 @@ fun SkateTrackWearApp(
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(onClick = {
-                                val result = logAttempt(currentRoutineIndex!!, currentTrickIndex.value, true)
+                                val result = logAttempt(currentRoutineIndex ?: 0, currentTrickIndex.value, true)
                                 if (currentTrickIndex.value != result.second) {
                                     attemptCount.value = 0
                                     lastSpeed.value = 0.0
@@ -158,11 +176,8 @@ fun SkateTrackWearApp(
                                     lastSpeed.value = trick.lands.lastOrNull()?.speed ?: 0.0
                                 }
                                 if (result.second == 0 && currentTrickIndex.value != result.second) {
-                                    currentRoutineIndex = null
-                                    currentTrickIndex.value = 0
                                     currentRoutineInstance.value = null
                                 } else {
-                                    currentRoutineIndex = result.first
                                     currentTrickIndex.value = result.second
                                 }
                             }, modifier = Modifier.weight(1f)) {

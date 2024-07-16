@@ -1,5 +1,6 @@
 package com.example.skatetrack.presentation
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -23,6 +24,7 @@ import java.sql.Time
 import java.util.*
 import kotlin.math.sqrt
 import androidx.compose.runtime.mutableIntStateOf
+import com.example.skatetrack.presentation.ui.theme.SkateTrackTheme
 
 class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, SensorEventListener {
 
@@ -38,13 +40,68 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, Sens
     private val currentRoutineInstance = mutableStateOf<Routine?>(null)
     private val currentTrickIndex = mutableIntStateOf(0)
     private val lastSpeed = mutableStateOf(0.0)
+    private val screenState = mutableStateOf("home")
 
 
+    @SuppressLint("UnrememberedMutableState")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         loadRoutinesFromPreferences()
         setContent {
-            SkateTrackWearApp(routines, ::logAttempt, ::startRoutine, currentRoutineInstance, ::skipCurrentTrick, currentTrickIndex, lastSpeed)
+            SkateTrackTheme {
+                when (screenState.value) {
+                    "home" -> {
+                        SkateTrackHomeScreen(
+                            onRoutinesSelected = { screenState.value = "routines" },
+                            onTricksSelected = { screenState.value = "tricks" }
+                        )
+                    }
+
+                    "routines" -> {
+                        SkateTrackRoutinesScreen(
+                            routines = routines,
+                            startRoutine = { index ->
+                                startRoutine(index)
+                                screenState.value = "current_trick"
+                            },
+                            currentTrickIndexState = currentTrickIndex,
+                            currentRoutineInstance = currentRoutineInstance,
+                            attemptCount = mutableStateOf(0),
+                            lastSpeed = lastSpeed
+                        )
+                    }
+
+                    "tricks" -> {
+                        SkateTrackTricksScreen(
+                            startTrick = { trick ->
+                                startSingleTrick(trick)
+                                screenState.value = "current_trick"
+                            },
+                            currentTrickIndexState = currentTrickIndex,
+                            currentRoutineInstance = currentRoutineInstance,
+                            attemptCount = mutableStateOf(0),
+                            lastSpeed = lastSpeed
+                        )
+                    }
+
+                    "current_trick" -> {
+                        SkateTrackCurrentTrickScreen(
+                            currentTrick = currentRoutineInstance.value?.tricks?.getOrNull(
+                                currentTrickIndex.value
+                            ),
+                            logAttempt = ::logAttempt,
+                            currentRoutineIndex = null, // Use an appropriate value for the current routine index if needed
+                            currentTrickIndexState = currentTrickIndex,
+                            currentRoutineInstance = currentRoutineInstance,
+                            attemptCount = mutableStateOf(0),
+                            lastSpeed = lastSpeed,
+                            onRoutineFinished = {
+                                screenState.value = "home"
+                            }
+                        )
+                    }
+                }
+            }
         }
 
         dataClient = Wearable.getDataClient(this)
@@ -135,8 +192,38 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, Sens
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
         Log.d(TAG, "accuracy changed :(")
-
     }
+
+    // Add this property in MainActivity
+    private val tricks = listOf(
+        Trick("Regular", "Ollie", 1),
+        Trick("Switch", "Kickflip", 1),
+        Trick("Nollie", "Heelflip", 1)
+    )
+
+    // Add this function in MainActivity
+    private fun startSingleTrick(trick: Trick) {
+        val singleTrickRoutine = Routine(
+            name = trick.trick,
+            tricks = listOf(trick),
+            startTime = Date()
+        )
+        currentRoutineInstance.value = singleTrickRoutine
+
+        // Send the new routine instance to the mobile app
+        val routineJson = Gson().toJson(singleTrickRoutine)
+        val putDataReq: PutDataRequest = PutDataMapRequest.create("/new_routine_instance").apply {
+            dataMap.putString("routine", routineJson)
+        }.asPutDataRequest()
+
+        Wearable.getDataClient(this).putDataItem(putDataReq).addOnSuccessListener {
+            Log.d(TAG, "New single trick routine instance sent to phone")
+        }
+
+        Log.d(TAG, "Started new single trick routine instance: $singleTrickRoutine")
+    }
+
+
 
     private fun skipCurrentTrick() {
         val currentRoutine = currentRoutineInstance.value ?: return
